@@ -1,115 +1,64 @@
 # Calcolatore Rata Finanziamento Auto
 
-Calcolatore di rata di finanziamento per prestiti auto, costruito su Laravel + Inertia + Vue 3 + TypeScript.
+## Il caso: 20.000 € di importo, TAN 7%/7,50%/8%, durata 36/48/60 mesi
 
-## Stack
+Cliente in concessionaria vuole sapere subito quanto pagherà al mese. La domanda chiave per costruire il preventivo: le spese di istruttoria (300 €) e la polizza (800 €) le finanziamo dentro l'importo o le facciamo pagare a parte?
 
-- **Backend**: Laravel 13 (PHP 8.3+), Pest 4, Fortify (auth, 2FA, passkeys)
-- **Frontend**: Vue 3 + TypeScript, Inertia v3 SSR, Tailwind v4, shadcn-vue (`new-york-v4`, neutral, icone lucide)
-- **Tooling**: Vite, Wayfinder (route/action types generati), ESLint v9, Prettier, Pint
-- **Test**: Pest (PHP), Vitest (TypeScript)
-- **DB**: SQLite
+**Scelta: finanziate dentro l'importo.** È esattamente quello che fanno tutte le captive bank del mercato. Il cliente firma per 21.100 € totali, riceve i 20.000 € netti che gli servono per la macchina, e paga una sola rata che già contiene tutto.
 
-## Setup
+Risultato concreto a TAN 7% su 36 mesi: rata **651,51 €**, costo totale **23.454,38 €**. Il calcolatore aggiorna i numeri in tempo reale appena cambi i parametri e, con un click sul pulsante "Confronta", **mette due configurazioni fianco a fianco** — per esempio 36 mesi vs 60 mesi, oppure TAN 7% vs 8% — mostrando in colpo d'occhio quanto cambia la rata mensile e il totale dovuto.
 
-```bash
-composer setup     # install + .env + key + migrate + npm install + build
-composer dev       # serve + queue + pail + vite, tutto concorrente
-```
+## Deploy in 2 minuti e potenziale della pipeline CI/CD
 
-## Comandi utili
+Da quando salvo una modifica al sito a quando i clienti la vedono online passano circa due minuti, completamente in automatico. Salvo il codice, parte una catena di passaggi: il codice viene verificato, costruito e pubblicato sul server, l'applicazione torna online senza un secondo di interruzione e senza che io debba toccare niente manualmente.
 
-| Comando | Cosa fa |
-|---|---|
-| `composer dev` | Avvia stack di sviluppo completo |
-| `composer test` | Pint check + suite PHP |
-| `composer ci:check` | Lint + format + types + test (gate pre-push) |
-| `npx vitest run` | Test TypeScript |
-| `npm run types:check` | `vue-tsc --noEmit` |
-| `npm run lint` | ESLint con auto-fix |
-| `npm run build:ssr` | Build client + SSR |
+![Tempo di deploy reale: 2 minuti e 31 secondi dal commit al rilascio](docs/deploy-time.png)
 
-## Data Layer
+In questo progetto uso **Coolify** perché ho un mio server personale (un VPS) che gestisco direttamente — Coolify è un pannello di controllo che lo rende semplice da usare. Lo stesso identico risultato si ottiene su qualsiasi altra soluzione: un VPS più tradizionale gestito via SSH, oppure un ambiente cloud come AWS, Google Cloud, Azure o Laravel Cloud. La pipeline non cambia, cambia solo dove l'app gira.
 
-### Tipi (`resources/js/types/loan.ts`)
+Prima di arrivare in produzione, ogni proposta di modifica viene controllata in automatico:
 
-```ts
-type LoanInput = {
-    importo: number;          // capitale netto richiesto (es. 20000)
-    tan: number;              // tasso annuo nominale in % (es. 7)
-    durataMesi: number;       // numero rate mensili (es. 36)
-    speseIstruttoria: number; // commissione di istruttoria
-    polizza: number;          // premio unico polizza (CPI / furto-incendio)
-};
+- **Test funzionali** che verificano che il calcolo della rata resti corretto — se qualcuno (uno sviluppatore o un'AI) tocca la formula e sbaglia, il sistema blocca il deploy prima che il bug arrivi al cliente
+- **Controlli di stile e qualità** del codice, così il progetto resta coerente nel tempo anche con persone diverse che ci lavorano
+- **Pubblicazione** solo dopo che la modifica è stata approvata
 
-type LoanResult = {
-    rata: number;             // rata mensile
-    totale: number;           // importo totale dovuto = rata * durataMesi
-};
-```
+E qui c'è il vero valore: questa base permette di aggiungere senza riscrivere nulla cose come **ambienti di anteprima** per far vedere al cliente una funzionalità prima ancora di pubblicarla, **ripristino automatico** alla versione precedente se qualcosa va storto, **notifiche su Slack o Telegram** a ogni rilascio, **un ambiente di test separato** identico alla produzione. Sono tutte cose che normalmente costano settimane di lavoro di provisioning: qui sono già a portata di un'ora di configurazione perché le fondamenta ci sono.
 
-### Funzione (`resources/js/lib/loan.ts`)
+Tradotto: ogni modifica è tracciata, verificata, pubblicata e ripristinabile. Niente più "ho cambiato un file sul server e ora il sito non funziona".
 
-Ammortamento alla francese (rata costante) con **spese istruttoria e polizza finanziate dentro il capitale**.
+## Perché ho scelto Laravel + Inertia + Vue: un prodotto, tanti clienti
 
-```
-capitale = importo + speseIstruttoria + polizza
-i        = TAN / 12 / 100
-rata     = capitale · i / (1 - (1 + i)^-n)        // se i > 0
-rata     = capitale / n                            // se i = 0
-totale   = rata · n
-```
+Quando ho scelto lo stack tecnologico, non l'ho fatto per comodità mia di sviluppatore — l'ho fatto pensando al **modello di business**. Laravel + Inertia + Vue mi permette di costruire **un'unica applicazione che serve tanti concessionari, banche o clienti finali dalla stessa infrastruttura**.
 
-## Modello di prodotto: prestito auto
+Concretamente, in chiave SaaS:
 
-### Vincoli dell'esercizio
+- Ogni cliente ha il suo account, il suo brand, i suoi tassi, le sue spese e polizze pre-configurate, i suoi utenti
+- Tutti usano lo stesso codice, la stessa pipeline, lo stesso server
+- Quando correggo un bug, la correzione arriva a tutti i clienti contemporaneamente con un singolo rilascio
+- Aggiungere un nuovo cliente significa creare un record nel database, non mettere in piedi un'infrastruttura nuova
 
-- Importo richiesto: **20.000 €**
-- Tassi disponibili (TAN): **7%**, **7,50%**, **8%**
-- Durate: **36**, **48**, **60** mesi
-- Spese istruttoria: **300 €**
-- Polizza: **800 €**
+Per me è questa la differenza fra **fare un calcolatore** (un file HTML che mando via email, da copiare e personalizzare ogni volta, con tutte le grane di manutenzione che si moltiplicano per ogni cliente che acquisisco) e **costruire un prodotto SaaS** (un servizio che vendo in abbonamento e che cresce orizzontalmente senza che la complessità tecnica esploda).
 
-### Decisione di prodotto: istruttoria e polizza finanziate dentro l'importo
+C'è anche un vantaggio diretto per chi compra il prodotto: il cliente finale non deve mai pensare a hosting, certificati SSL, aggiornamenti di sicurezza, backup, monitoraggio. Si logga, configura il suo calcolatore, lo embedda sul sito della concessionaria. A tutto il resto penso io.
 
-Sia istruttoria che polizza vengono **caricate nel capitale ammortizzato** (capitale base = 21.100 €), non fatte pagare in cash a parte alla firma.
+---
 
-**Motivazioni — specifiche per prestito auto**:
+### Sotto al cofano
 
-1. **Cliente già esposto su cash**. Anticipo, IPT, immatricolazione e passaggio bruciano già liquidità a firma; aggiungere 1.100 € di esborso vivo è il principale ostacolo alla vendita osservato dai concessionari.
-2. **Pratica delle captive bank**. FCA Bank, VW Financial Services, Santander Consumer, Findomestic auto, Agos finanziano sempre istruttoria e polizza dentro la pratica. Modellare il calcolatore sul comportamento di mercato evita differenze tra preventivo e contratto reale.
-3. **Polizza come premio unico finanziato**. Le coperture CPI e furto-incendio collegate al finanziamento sono nello standard di mercato premi unici anticipati e finanziati: sono parte integrante della pratica, non un acquisto separato.
-4. **TAN promozionali e confronto**. I tassi promo dei concessionari (es. "TAN agevolato 6,99%") sono già calcolati assumendo spese dentro la pratica. Estrarle fuori dal capitale falserebbe il confronto fra preventivi.
-5. **Tutela del collaterale**. Capitale residuo che include polizza rende il portafoglio crediti più resiliente in caso di sinistro o default precoce.
-6. **UX più semplice**. Cliente chiede 20.000 € e li riceve netti al dealer; firma un'unica somma lorda con un'unica rata, senza voci separate da spiegare.
+- **Backend**: Laravel 13 su PHP 8.4, Fortify già integrato per autenticazione + 2FA + passkey
+- **Frontend**: Vue 3 + TypeScript, UI con shadcn-vue e Tailwind v4
+- **Ponte client/server**: Inertia v3 — niente API REST custom da mantenere, le pagine sono componenti Vue che ricevono dati direttamente dai controller Laravel
+- **Build**: Vite 8, SSR pronto out-of-the-box
+- **Test**: Pest 4 (PHP), Vitest (TypeScript) — il calcolo della rata ha test dedicati che verificano formula francese, fallback a TAN zero, finanziamento spese e l'esempio dell'esercizio
+- **Deploy**: Coolify self-hosted con nixpacks; pipeline GitHub Actions per test, lint, deploy
+- **Data layer del calcolo**: `resources/js/types/loan.ts` (tipi) + `resources/js/lib/loan.ts` (funzione `calculateLoan`)
 
-**Trade-off accettato**: rata leggermente più alta rispetto al modello "spese fuori capitale", ma riflette il costo reale e allinea TAEG visibile a TAEG di contratto.
-
-### Esempio: 20.000 € + 300 € + 800 €, TAN 7%, 36 mesi
-
-- Capitale ammortizzato: **21.100 €**
-- Tasso mensile *i*: 7 / 12 / 100 ≈ 0,005833
-- Rata mensile: **≈ 651,51 €**
-- Totale dovuto: **≈ 23.454,38 €**
-
-## Test
-
-Test TypeScript del data layer in `resources/js/lib/loan.test.ts`:
+### Comandi rapidi
 
 ```bash
-npx vitest run resources/js/lib/loan.test.ts
+composer setup     # primo setup: install, .env, migrazioni, build assets
+composer dev       # avvia in locale (server + queue + log + vite)
+composer test      # esegue suite PHP
+npx vitest run     # esegue suite TypeScript
+composer ci:check  # gate completo: lint + format + types + test
 ```
-
-Casi coperti:
-
-- Ammortamento alla francese standard
-- Fallback lineare quando TAN = 0
-- Spese e polizza finanziate dentro il capitale
-- Esercizio auto (20.000 € + 300 € + 800 €, TAN 7%, 36 mesi)
-
-## Struttura
-
-- `resources/js/types/loan.ts` — tipi di dominio del prestito
-- `resources/js/lib/loan.ts` — funzione `calculateLoan`
-- `resources/js/lib/loan.test.ts` — test Vitest
-- `CLAUDE.md` — guida per Claude Code (comandi, architettura, convenzioni)
