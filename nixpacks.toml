@@ -22,7 +22,7 @@ cmds = [
     "cp /assets/supervisord.conf /etc/supervisord.conf",
     "chmod +x /assets/start.sh",
     "cp .env.example .env",
-    "composer install --optimize-autoloader --no-dev --no-suggest --quiet --no-interaction --no-scripts",
+    "composer install --optimize-autoloader --no-dev --no-suggest --quiet --no-interaction",
     "php artisan wayfinder:generate --with-form",
     "npm ci",
     "npm run build",
