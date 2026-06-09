@@ -146,35 +146,37 @@ function eurSigned(n: number): string {
     <Head title="Calcola la rata del tuo finanziamento auto" />
 
     <div
-        class="flex h-screen flex-col overflow-hidden bg-gradient-to-b from-slate-50 via-white to-blue-50/40 text-slate-900 dark:from-slate-950 dark:via-slate-950 dark:to-blue-950/30 dark:text-slate-100"
+        class="flex min-h-screen flex-col bg-gradient-to-b from-slate-50 via-white to-blue-50/40 text-slate-900 lg:h-screen lg:overflow-hidden dark:from-slate-950 dark:via-slate-950 dark:to-blue-950/30 dark:text-slate-100"
     >
         <header
-            class="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5"
+            class="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4 sm:px-6 sm:py-5"
         >
             <div class="flex items-center gap-2">
                 <div
-                    class="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-700 text-white shadow-sm"
+                    class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-700 text-white shadow-sm sm:h-9 sm:w-9"
                 >
-                    <Car class="h-5 w-5" />
+                    <Car class="h-4 w-4 sm:h-5 sm:w-5" />
                 </div>
-                <span class="text-sm font-semibold tracking-tight">
+                <span
+                    class="text-xs font-semibold tracking-tight sm:text-sm"
+                >
                     Calcolatore Rata Auto
                 </span>
             </div>
 
             <nav
                 v-if="!$page.props.auth?.user"
-                class="flex items-center gap-2"
+                class="flex items-center gap-1.5 sm:gap-2"
             >
                 <Link
                     :href="login()"
-                    class="rounded-md px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:text-blue-700 dark:text-slate-300 dark:hover:text-blue-300"
+                    class="rounded-md px-2 py-1.5 text-xs font-medium text-slate-600 transition hover:text-blue-700 sm:px-3 sm:text-sm dark:text-slate-300 dark:hover:text-blue-300"
                 >
                     Accedi
                 </Link>
                 <Link
                     :href="register()"
-                    class="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
+                    class="rounded-md bg-slate-900 px-2 py-1.5 text-xs font-medium text-white transition hover:bg-slate-800 sm:px-3 sm:text-sm dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
                 >
                     Registrati
                 </Link>
@@ -182,11 +184,11 @@ function eurSigned(n: number): string {
         </header>
 
         <main
-            class="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 px-6 py-4"
+            class="flex flex-1 flex-col items-center gap-6 px-4 py-6 sm:px-6 lg:min-h-0 lg:justify-center lg:py-4"
         >
             <section class="max-w-2xl text-center">
                 <h1
-                    class="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl dark:text-white"
+                    class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl lg:text-3xl dark:text-white"
                 >
                     Calcola la rata del tuo
                     <span class="text-blue-700 dark:text-blue-400">
@@ -194,7 +196,7 @@ function eurSigned(n: number): string {
                     </span>
                 </h1>
                 <p
-                    class="mx-auto mt-2 text-sm text-slate-600 dark:text-slate-400"
+                    class="mx-auto mt-2 text-xs text-slate-600 sm:text-sm dark:text-slate-400"
                 >
                     Inserisci importo, TAN e durata: rata e costo totale subito.
                     Istruttoria e polizza finanziate dentro il capitale — come
@@ -206,7 +208,7 @@ function eurSigned(n: number): string {
                 class="w-full max-w-5xl gap-0 overflow-hidden border-slate-200/80 py-0 shadow-xl shadow-blue-900/5 dark:border-slate-800"
             >
                 <div class="grid lg:grid-cols-[1.1fr_1fr]">
-                    <div class="p-6 sm:p-8">
+                    <div class="p-5 sm:p-6 lg:p-8">
                         <CardHeader class="px-0 pt-0 pb-5">
                             <CardTitle
                                 class="flex items-center gap-2 text-lg"
@@ -358,7 +360,7 @@ function eurSigned(n: number): string {
                     </div>
 
                     <aside
-                        class="relative flex flex-col justify-between gap-6 bg-gradient-to-br from-slate-900 via-blue-900 to-blue-800 p-6 text-white sm:p-8 dark:from-slate-950 dark:via-blue-950 dark:to-slate-900"
+                        class="relative flex flex-col justify-between gap-6 bg-gradient-to-br from-slate-900 via-blue-900 to-blue-800 p-5 text-white sm:p-6 lg:p-8 dark:from-slate-950 dark:via-blue-950 dark:to-slate-900"
                     >
                         <template v-if="!snapshot">
                             <div>
@@ -368,7 +370,7 @@ function eurSigned(n: number): string {
                                     Rata mensile
                                 </p>
                                 <p
-                                    class="mt-2 text-4xl font-bold tabular-nums sm:text-5xl"
+                                    class="mt-2 text-3xl font-bold tabular-nums sm:text-4xl lg:text-5xl"
                                 >
                                     {{ eur(result.rata) }}
                                 </p>
@@ -443,7 +445,7 @@ function eurSigned(n: number): string {
                                             {{ snapshot.durataMesi }} mesi
                                         </p>
                                         <p
-                                            class="mt-2 text-2xl font-bold tabular-nums"
+                                            class="mt-2 text-xl font-bold tabular-nums sm:text-2xl"
                                         >
                                             {{ eur(snapshotResult.rata) }}
                                         </p>
@@ -461,7 +463,7 @@ function eurSigned(n: number): string {
                                             {{ durataMesi }} mesi
                                         </p>
                                         <p
-                                            class="mt-2 text-2xl font-bold tabular-nums"
+                                            class="mt-2 text-xl font-bold tabular-nums sm:text-2xl"
                                         >
                                             {{ eur(result.rata) }}
                                         </p>
@@ -570,7 +572,7 @@ function eurSigned(n: number): string {
         </main>
 
         <footer
-            class="mx-auto max-w-6xl px-6 pb-5 text-center text-xs text-slate-500 dark:text-slate-500"
+            class="mx-auto max-w-6xl px-4 pb-4 text-center text-[11px] text-slate-500 sm:px-6 sm:pb-5 sm:text-xs dark:text-slate-500"
         >
             Strumento di simulazione. Le condizioni effettive dipendono dalla
             banca o dalla captive del concessionario.
