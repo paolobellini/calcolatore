@@ -26,7 +26,6 @@ cmds = [
     "php artisan wayfinder:generate --with-form",
     "npm ci",
     "npm run build",
-    "php artisan optimize:clear",
 ]
 
 [start]
