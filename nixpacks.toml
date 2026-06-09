@@ -42,6 +42,11 @@ chmod -R 775 /app/storage /app/bootstrap/cache
 
 cd /app
 
+# Clear any stale cache from previous boots before reading runtime env
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+
 # Run database migrations (idempotent — skips already-applied)
 php artisan migrate --force --no-interaction
 
