@@ -28,7 +28,7 @@ describe('calculateLoan', () => {
         expect(totale).toBe(1200);
     });
 
-    it('adds spese istruttoria and polizza to totale, not to rata', () => {
+    it('finances spese istruttoria and polizza inside the capital base', () => {
         const { rata, totale } = calculateLoan({
             importo: 5000,
             tan: 0,
@@ -37,7 +37,20 @@ describe('calculateLoan', () => {
             polizza: 50,
         });
 
-        expect(rata).toBe(500);
-        expect(totale).toBe(5000 + 150 + 50);
+        expect(rata).toBe(520);
+        expect(totale).toBe(5200);
+    });
+
+    it('matches car-loan exercise: 20k + 300 + 800, TAN 7%, 36 mesi', () => {
+        const { rata, totale } = calculateLoan({
+            importo: 20000,
+            tan: 7,
+            durataMesi: 36,
+            speseIstruttoria: 300,
+            polizza: 800,
+        });
+
+        expect(rata).toBeCloseTo(651.51, 2);
+        expect(totale).toBeCloseTo(rata * 36, 10);
     });
 });
