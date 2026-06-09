@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { Calculator, Car } from '@lucide/vue';
+import { ArrowLeftRight, Calculator, Car, X } from '@lucide/vue';
 import { computed, ref } from 'vue';
+import type { LoanInput } from '@/types/loan';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -74,6 +75,70 @@ function parseDigits(v: string | number): number {
     const digits = String(v).replace(/\D/g, '');
 
     return digits === '' ? 0 : Number(digits);
+}
+
+const snapshot = ref<LoanInput | null>(null);
+
+const snapshotResult = computed(
+    () => (snapshot.value ? calculateLoan(snapshot.value) : null),
+);
+
+const snapshotCapitale = computed(() => {
+    if (!snapshot.value) {
+        return 0;
+    }
+
+    return (
+        snapshot.value.importo
+        + snapshot.value.speseIstruttoria
+        + snapshot.value.polizza
+    );
+});
+
+const snapshotInteressi = computed(() => {
+    if (!snapshotResult.value) {
+        return 0;
+    }
+
+    return snapshotResult.value.totale - snapshotCapitale.value;
+});
+
+const deltaTotale = computed(() => {
+    if (!snapshotResult.value) {
+        return 0;
+    }
+
+    return result.value.totale - snapshotResult.value.totale;
+});
+
+const deltaRata = computed(() => {
+    if (!snapshotResult.value) {
+        return 0;
+    }
+
+    return result.value.rata - snapshotResult.value.rata;
+});
+
+function toggleCompare(): void {
+    if (snapshot.value) {
+        snapshot.value = null;
+
+        return;
+    }
+
+    snapshot.value = {
+        importo: Number(importo.value),
+        tan: Number(tan.value),
+        durataMesi: Number(durataMesi.value),
+        speseIstruttoria: Number(speseIstruttoria.value),
+        polizza: Number(polizza.value),
+    };
+}
+
+function eurSigned(n: number): string {
+    const sign = n > 0 ? '+' : n < 0 ? '−' : '';
+
+    return sign + eur(Math.abs(n));
 }
 </script>
 
@@ -272,68 +337,232 @@ function parseDigits(v: string | number): number {
                                 </div>
                             </div>
 
+                            <Button
+                                type="button"
+                                variant="outline"
+                                class="w-full gap-2 border-blue-200 text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-blue-900 dark:text-blue-300 dark:hover:bg-blue-950/40"
+                                @click="toggleCompare"
+                            >
+                                <ArrowLeftRight
+                                    v-if="!snapshot"
+                                    class="h-4 w-4"
+                                />
+                                <X v-else class="h-4 w-4" />
+                                {{
+                                    snapshot
+                                        ? 'Esci dal confronto'
+                                        : 'Confronta con un\'altra configurazione'
+                                }}
+                            </Button>
                         </CardContent>
                     </div>
 
                     <aside
                         class="relative flex flex-col justify-between gap-6 bg-gradient-to-br from-slate-900 via-blue-900 to-blue-800 p-6 text-white sm:p-8 dark:from-slate-950 dark:via-blue-950 dark:to-slate-900"
                     >
-                        <div>
-                            <p
-                                class="text-xs font-medium tracking-widest text-blue-200/80 uppercase"
-                            >
-                                Rata mensile
-                            </p>
-                            <p
-                                class="mt-2 text-4xl font-bold tabular-nums sm:text-5xl"
-                            >
-                                {{ eur(result.rata) }}
-                            </p>
-                            <p class="mt-1 text-sm text-blue-200/80">
-                                per {{ durataMesi }} mesi · TAN {{ pct(tan) }}
-                            </p>
-                        </div>
-
-                        <div class="space-y-3 text-sm">
-                            <div
-                                class="flex items-center justify-between border-b border-white/10 pb-3"
-                            >
-                                <span class="text-blue-100/80">TAN</span>
-                                <span class="font-semibold tabular-nums">
-                                    {{ pct(tan) }}
-                                </span>
-                            </div>
-                            <div
-                                class="flex items-center justify-between border-b border-white/10 pb-3"
-                            >
-                                <span class="text-blue-100/80">
-                                    Capitale ammortizzato
-                                </span>
-                                <span class="font-semibold tabular-nums">
-                                    {{ eur(capitale) }}
-                                </span>
-                            </div>
-                            <div
-                                class="flex items-center justify-between border-b border-white/10 pb-3"
-                            >
-                                <span class="text-blue-100/80">
-                                    Interessi
-                                </span>
-                                <span class="font-semibold tabular-nums">
-                                    {{ eur(interessi) }}
-                                </span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-blue-100/80">
-                                    Totale dovuto
-                                </span>
-                                <span
-                                    class="text-lg font-bold tabular-nums text-emerald-300"
+                        <template v-if="!snapshot">
+                            <div>
+                                <p
+                                    class="text-xs font-medium tracking-widest text-blue-200/80 uppercase"
                                 >
-                                    {{ eur(result.totale) }}
-                                </span>
+                                    Rata mensile
+                                </p>
+                                <p
+                                    class="mt-2 text-4xl font-bold tabular-nums sm:text-5xl"
+                                >
+                                    {{ eur(result.rata) }}
+                                </p>
+                                <p class="mt-1 text-sm text-blue-200/80">
+                                    per {{ durataMesi }} mesi · TAN
+                                    {{ pct(tan) }}
+                                </p>
                             </div>
-                        </div>
+
+                            <div class="space-y-3 text-sm">
+                                <div
+                                    class="flex items-center justify-between border-b border-white/10 pb-3"
+                                >
+                                    <span class="text-blue-100/80">TAN</span>
+                                    <span class="font-semibold tabular-nums">
+                                        {{ pct(tan) }}
+                                    </span>
+                                </div>
+                                <div
+                                    class="flex items-center justify-between border-b border-white/10 pb-3"
+                                >
+                                    <span class="text-blue-100/80">
+                                        Capitale ammortizzato
+                                    </span>
+                                    <span class="font-semibold tabular-nums">
+                                        {{ eur(capitale) }}
+                                    </span>
+                                </div>
+                                <div
+                                    class="flex items-center justify-between border-b border-white/10 pb-3"
+                                >
+                                    <span class="text-blue-100/80">
+                                        Interessi
+                                    </span>
+                                    <span class="font-semibold tabular-nums">
+                                        {{ eur(interessi) }}
+                                    </span>
+                                </div>
+                                <div
+                                    class="flex items-center justify-between"
+                                >
+                                    <span class="text-blue-100/80">
+                                        Totale dovuto
+                                    </span>
+                                    <span
+                                        class="text-lg font-bold tabular-nums text-emerald-300"
+                                    >
+                                        {{ eur(result.totale) }}
+                                    </span>
+                                </div>
+                            </div>
+                        </template>
+
+                        <template v-else-if="snapshotResult">
+                            <div>
+                                <p
+                                    class="text-xs font-medium tracking-widest text-blue-200/80 uppercase"
+                                >
+                                    Confronto rate
+                                </p>
+                                <div class="mt-3 grid grid-cols-2 gap-4">
+                                    <div>
+                                        <span
+                                            class="inline-flex items-center rounded-md bg-white/10 px-2 py-0.5 text-[10px] font-bold tracking-wider"
+                                        >
+                                            A
+                                        </span>
+                                        <p
+                                            class="mt-1 text-[11px] text-blue-200/80"
+                                        >
+                                            TAN {{ pct(snapshot.tan) }} ·
+                                            {{ snapshot.durataMesi }} mesi
+                                        </p>
+                                        <p
+                                            class="mt-2 text-2xl font-bold tabular-nums"
+                                        >
+                                            {{ eur(snapshotResult.rata) }}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <span
+                                            class="inline-flex items-center rounded-md bg-emerald-400/20 px-2 py-0.5 text-[10px] font-bold tracking-wider text-emerald-300"
+                                        >
+                                            B
+                                        </span>
+                                        <p
+                                            class="mt-1 text-[11px] text-blue-200/80"
+                                        >
+                                            TAN {{ pct(tan) }} ·
+                                            {{ durataMesi }} mesi
+                                        </p>
+                                        <p
+                                            class="mt-2 text-2xl font-bold tabular-nums"
+                                        >
+                                            {{ eur(result.rata) }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2.5 text-xs">
+                                <div
+                                    class="grid grid-cols-[1fr_auto_auto] items-center gap-3 border-b border-white/10 pb-2.5"
+                                >
+                                    <span class="text-blue-100/80">
+                                        Capitale
+                                    </span>
+                                    <span class="tabular-nums">
+                                        {{ eur(snapshotCapitale) }}
+                                    </span>
+                                    <span
+                                        class="font-semibold tabular-nums"
+                                    >
+                                        {{ eur(capitale) }}
+                                    </span>
+                                </div>
+                                <div
+                                    class="grid grid-cols-[1fr_auto_auto] items-center gap-3 border-b border-white/10 pb-2.5"
+                                >
+                                    <span class="text-blue-100/80">
+                                        Interessi
+                                    </span>
+                                    <span class="tabular-nums">
+                                        {{ eur(snapshotInteressi) }}
+                                    </span>
+                                    <span
+                                        class="font-semibold tabular-nums"
+                                    >
+                                        {{ eur(interessi) }}
+                                    </span>
+                                </div>
+                                <div
+                                    class="grid grid-cols-[1fr_auto_auto] items-center gap-3 pb-1"
+                                >
+                                    <span class="text-blue-100/80">
+                                        Totale
+                                    </span>
+                                    <span class="tabular-nums">
+                                        {{ eur(snapshotResult.totale) }}
+                                    </span>
+                                    <span
+                                        class="font-semibold tabular-nums text-emerald-300"
+                                    >
+                                        {{ eur(result.totale) }}
+                                    </span>
+                                </div>
+
+                                <div
+                                    class="mt-2 rounded-lg bg-white/5 p-3 text-[11px]"
+                                >
+                                    <p class="text-blue-200/80">
+                                        Differenza B − A
+                                    </p>
+                                    <div
+                                        class="mt-1.5 flex items-center justify-between"
+                                    >
+                                        <span class="text-blue-100/80">
+                                            Rata
+                                        </span>
+                                        <span
+                                            :class="[
+                                                'font-semibold tabular-nums',
+                                                deltaRata > 0
+                                                    ? 'text-rose-300'
+                                                    : deltaRata < 0
+                                                        ? 'text-emerald-300'
+                                                        : 'text-blue-100/80',
+                                            ]"
+                                        >
+                                            {{ eurSigned(deltaRata) }}
+                                        </span>
+                                    </div>
+                                    <div
+                                        class="mt-1 flex items-center justify-between"
+                                    >
+                                        <span class="text-blue-100/80">
+                                            Totale
+                                        </span>
+                                        <span
+                                            :class="[
+                                                'font-semibold tabular-nums',
+                                                deltaTotale > 0
+                                                    ? 'text-rose-300'
+                                                    : deltaTotale < 0
+                                                        ? 'text-emerald-300'
+                                                        : 'text-blue-100/80',
+                                            ]"
+                                        >
+                                            {{ eurSigned(deltaTotale) }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
                     </aside>
                 </div>
             </Card>
