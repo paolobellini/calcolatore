@@ -1,7 +1,15 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { ArrowLeftRight, Calculator, Car, X } from '@lucide/vue';
+import {
+    ArrowLeftRight,
+    Calculator,
+    Car,
+    Moon,
+    Sun,
+    X,
+} from '@lucide/vue';
 import { computed, ref } from 'vue';
+import { useAppearance } from '@/composables/useAppearance';
 import type { LoanInput } from '@/types/loan';
 import { Button } from '@/components/ui/button';
 import {
@@ -66,6 +74,12 @@ function fmtInt(n: number): string {
 const importoFocused = ref(false);
 const speseFocused = ref(false);
 const polizzaFocused = ref(false);
+
+const { resolvedAppearance, updateAppearance } = useAppearance();
+
+function toggleTheme(): void {
+    updateAppearance(resolvedAppearance.value === 'dark' ? 'light' : 'dark');
+}
 
 function display(n: number, focused: boolean): string {
     return focused ? String(n) : fmtInt(n);
@@ -164,22 +178,38 @@ function eurSigned(n: number): string {
                 </span>
             </div>
 
-            <nav
-                v-if="!$page.props.auth?.user"
-                class="flex items-center gap-1.5 sm:gap-2"
-            >
-                <Link
-                    :href="login()"
-                    class="rounded-md px-2 py-1.5 text-xs font-medium text-slate-600 transition hover:text-blue-700 sm:px-3 sm:text-sm dark:text-slate-300 dark:hover:text-blue-300"
+            <nav class="flex items-center gap-1.5 sm:gap-2">
+                <button
+                    type="button"
+                    :aria-label="
+                        resolvedAppearance === 'dark'
+                            ? 'Passa al tema chiaro'
+                            : 'Passa al tema scuro'
+                    "
+                    class="flex h-8 w-8 items-center justify-center rounded-md text-slate-600 transition hover:bg-slate-100 hover:text-blue-700 sm:h-9 sm:w-9 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-blue-300"
+                    @click="toggleTheme"
                 >
-                    Accedi
-                </Link>
-                <Link
-                    :href="register()"
-                    class="rounded-md bg-slate-900 px-2 py-1.5 text-xs font-medium text-white transition hover:bg-slate-800 sm:px-3 sm:text-sm dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
-                >
-                    Registrati
-                </Link>
+                    <Sun
+                        v-if="resolvedAppearance === 'dark'"
+                        class="h-4 w-4 sm:h-[18px] sm:w-[18px]"
+                    />
+                    <Moon v-else class="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
+                </button>
+
+                <template v-if="!$page.props.auth?.user">
+                    <Link
+                        :href="login()"
+                        class="rounded-md px-2 py-1.5 text-xs font-medium text-slate-600 transition hover:text-blue-700 sm:px-3 sm:text-sm dark:text-slate-300 dark:hover:text-blue-300"
+                    >
+                        Accedi
+                    </Link>
+                    <Link
+                        :href="register()"
+                        class="rounded-md bg-slate-900 px-2 py-1.5 text-xs font-medium text-white transition hover:bg-slate-800 sm:px-3 sm:text-sm dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
+                    >
+                        Registrati
+                    </Link>
+                </template>
             </nav>
         </header>
 
